@@ -1,0 +1,6 @@
+# Unnessasary to copy
+flake.lock
+
+# Client-side cache that won't work on other machines
+.nix-develop-cache*
+
