@@ -4,3 +4,8 @@ flake.lock
 # Client-side cache that won't work on other machines
 .nix-develop-cache*
 
+
+
+# Added by cargo
+
+/target
