@@ -111,7 +111,7 @@ impl LexEngine {
         c >= 'A' && c <= 'Z'
     }
 }
-
+#[derive(Clone)]
 pub enum Token {
     Nonterm,
     Term,
@@ -122,6 +122,7 @@ pub enum Token {
     EndOfInput,
 }
 
+#[derive(Clone)]
 pub enum Attr {
     Skip,
     AttrString(String),
