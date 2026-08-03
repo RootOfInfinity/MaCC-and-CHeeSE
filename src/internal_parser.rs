@@ -25,7 +25,22 @@ impl ParsingEngine {
         Ok(())
     }
     pub fn start(&mut self) -> Result<Start, &'static str> {
-        Ok(Start(self.rules()?))
+        Ok(Start((self.store()?, self.rules()?)))
+    }
+    pub fn store(&mut self) -> Result<Store, &'static str> {
+        // assume first term is 'Store'
+        self.next_tok();
+        // assume second term is 'LeftArrow'
+        self.next_tok();
+        let mut termvec = Vec::new();
+        while let Token::Term = self.cur_tok.0 {
+            let gotta_be_term = self.cur_tok.clone();
+            self.next_tok();
+            termvec.push(gotta_be_term);
+        }
+        // assume last term is 'RightArrow'
+        self.next_tok();
+        Ok(Store(termvec))
     }
     pub fn rules(&mut self) -> Result<Rules, &'static str> {
         // if let Token::Nonterm = self.cur_tok.0 {
@@ -100,7 +115,9 @@ impl ParsingEngine {
 
 // need a func and an enum/struct for all nonterms
 
-pub struct Start(Rules);
+pub struct Start((Store, Rules));
+
+pub struct Store(Vec<Term>);
 
 // pub struct Rules(Option<(Rule, Box<Rules>)>);
 pub struct Rules(Vec<Rule>);
