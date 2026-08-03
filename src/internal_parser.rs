@@ -25,7 +25,7 @@ impl ParsingEngine {
         Ok(())
     }
     pub fn start(&mut self) -> Result<Start, &'static str> {
-        Ok(Start((self.store()?, self.rules()?)))
+        Ok(Start(self.store()?, self.rules()?))
     }
     fn store(&mut self) -> Result<Store, &'static str> {
         // assume first term is 'Store'
@@ -115,21 +115,21 @@ impl ParsingEngine {
 
 // need a func and an enum/struct for all nonterms
 
-pub struct Start((Store, Rules));
+pub struct Start(pub Store, pub Rules);
 
-pub struct Store(Vec<Term>);
+pub struct Store(pub Vec<Term>);
 
 // pub struct Rules(Option<(Rule, Box<Rules>)>);
-pub struct Rules(Vec<Rule>);
+pub struct Rules(pub Vec<Rule>);
 
-pub struct Rule(Term, SymList, ExtraRule);
+pub struct Rule(pub Term, pub SymList, pub ExtraRule);
 
 // pub struct SymList(Option<(Symbol, Box<SymList>)>);
-pub struct SymList(Vec<Symbol>);
+pub struct SymList(pub Vec<Symbol>);
 
-pub struct Symbol(Term);
+pub struct Symbol(pub Term);
 
 // pub struct ExtraRule(Option<(Term, SymList, Term, Box<ExtraRule>)>);
-pub struct ExtraRule(Vec<SymList>);
+pub struct ExtraRule(pub Vec<SymList>);
 
 type Term = (Token, Attr, (usize, usize));
