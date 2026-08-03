@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     internal_lexer::{Attr, Token},
-    internal_parser::{Rules, Start, Store},
+    internal_parser::{Rule, Rules, Start, Store, Symbol},
 };
 
 pub fn data_from_parse(ast: &Start) -> ParserData {
@@ -20,7 +20,42 @@ pub fn data_from_parse(ast: &Start) -> ParserData {
 }
 
 fn all_productions_in_ast(rules: &Rules) -> Vec<Production> {
-    todo!()
+    let mut prodvec = Vec::new();
+    for Rule(term, symlist, extrarule) in rules.0.iter() {
+        let (Token::Nonterm, Attr::AttrString(nonterm), _) = term else {
+            // can only get here with programmer error once error
+            // handling is fixed in internal_parser and internal_lexer
+            panic!();
+        };
+        let mut symvec = Vec::new();
+        for Symbol(term) in symlist.0.iter() {
+            let (token, attr, _) = term;
+            let Attr::AttrString(string) = attr else {
+                panic!();
+            };
+            symvec.push((token.clone(), string.clone()));
+        }
+        prodvec.push(Production {
+            nonterm: nonterm.clone(),
+            symbols: symvec,
+        });
+        // extra rules time
+        for extra_symbols in extrarule.0.iter() {
+            let mut symvec = Vec::new();
+            for Symbol(term) in extra_symbols.0.iter() {
+                let (token, attr, _) = term;
+                let Attr::AttrString(string) = attr else {
+                    panic!();
+                };
+                symvec.push((token.clone(), string.clone()));
+            }
+            prodvec.push(Production {
+                nonterm: nonterm.clone(),
+                symbols: symvec,
+            });
+        }
+    }
+    prodvec
 }
 fn all_stored_terms_in_ast(store: &Store) -> HashSet<String> {
     // should have caught if they weren't terminal identifers in internal_parser
@@ -44,7 +79,7 @@ fn all_terms_in_productions(prods: &Vec<Production>) -> Vec<String> {
 
 pub struct Production {
     pub nonterm: String,
-    pub symbols: Vec<String>,
+    pub symbols: Vec<(Token, String)>,
 }
 
 pub struct ParserData {
