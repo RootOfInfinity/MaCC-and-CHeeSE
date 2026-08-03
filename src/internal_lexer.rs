@@ -72,7 +72,11 @@ impl LexEngine {
                 self.next_char();
                 // add error checking if reach end of file
             }
-            return Some((Token::Nonterm, Attr::AttrString(temp_str), start_loc));
+            if temp_str == String::from("Store") {
+                return Some((Token::Store, Attr::Skip, start_loc));
+            } else {
+                return Some((Token::Nonterm, Attr::AttrString(temp_str), start_loc));
+            }
         }
         // now the small amount of symbols
         if self.cur_char() == ';' {
@@ -83,6 +87,12 @@ impl LexEngine {
         }
         if self.cur_char() == '$' {
             return Some((Token::EndOfInput, Attr::Skip, self.cur_loc));
+        }
+        if self.cur_char() == '<' {
+            return Some((Token::LeftArrow, Attr::Skip, self.cur_loc));
+        }
+        if self.cur_char() == '>' {
+            return Some((Token::RightArrow, Attr::Skip, self.cur_loc));
         }
         // finally the 'produces' symbol
         if self.cur_char() == ':' {
@@ -120,6 +130,9 @@ pub enum Token {
     Bar,
     NullVal,
     EndOfInput,
+    Store,
+    LeftArrow,
+    RightArrow,
 }
 
 #[derive(Clone)]
