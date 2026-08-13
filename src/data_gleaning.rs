@@ -70,11 +70,37 @@ fn all_stored_terms_in_ast(store: &Store) -> HashSet<String> {
     }
     set
 }
-fn all_nonterms_in_productions(prods: &Vec<Production>) -> Vec<String> {
-    todo!()
+fn all_nonterms_in_productions(prods: &Vec<Production>) -> HashSet<String> {
+    // get all the nonterms on the left side, but make sure there isn't
+    // any wild nonterms on the right side of productions by throwing
+    // error with panic and crashing
+    let mut nonterm_set = HashSet::new();
+    for prod in prods.iter() {
+        nonterm_set.insert(prod.nonterm.clone());
+    }
+    // check lap
+    for prod in prods.iter() {
+        for symbol in prod.symbols.iter() {
+            if let Token::Nonterm = symbol.0 {
+                if nonterm_set.contains(&symbol.1) {
+                    // does need to panic
+                    panic!("There is a nonterm without a definition");
+                }
+            }
+        }
+    }
+    nonterm_set
 }
-fn all_terms_in_productions(prods: &Vec<Production>) -> Vec<String> {
-    todo!()
+fn all_terms_in_productions(prods: &Vec<Production>) -> HashSet<String> {
+    let mut term_set = HashSet::new();
+    for prod in prods.iter() {
+        for symbol in prod.symbols.iter() {
+            if let Token::Term = symbol.0 {
+                term_set.insert(symbol.1.clone());
+            }
+        }
+    }
+    term_set
 }
 
 pub struct Production {
@@ -84,7 +110,7 @@ pub struct Production {
 
 pub struct ParserData {
     pub productions: Vec<Production>,
-    pub nonterms: Vec<String>,
-    pub terms: Vec<String>,
+    pub nonterms: HashSet<String>,
+    pub terms: HashSet<String>,
     pub terms_to_store: HashSet<String>,
 }
