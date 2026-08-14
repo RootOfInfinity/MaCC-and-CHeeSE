@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     internal_lexer::{Attr, Token},
-    internal_parser::{Rule, Rules, Start, Store},
+    internal_parser::{self, Rule, Rules, Start, Store},
 };
 
 pub fn data_from_parse(ast: &Start) -> ParserData {
@@ -38,7 +38,7 @@ fn all_productions_in_ast(
     let mut prodvec = Vec::new();
     let mut cur_term_id = 0;
     let mut cur_nonterm_id = 0;
-    for Rule(term, symlist, extrarule) in rules.0.iter() {
+    for Rule(term, derivation, extrarule) in rules.0.iter() {
         let (Token::Nonterm, Attr::AttrString(nonterm), _) = term else {
             // can only get here with programmer error once error
             // handling is fixed in internal_parser and internal_lexer
@@ -49,37 +49,8 @@ fn all_productions_in_ast(
             cur_nonterm_id += 1;
         }
         let mut symvec = Vec::new();
-        for crate::internal_parser::Symbol(term) in symlist.0.iter() {
-            let (token, attr, _) = term;
-            let Attr::AttrString(string) = attr else {
-                panic!();
-            };
-            match token {
-                Token::Nonterm => {
-                    if !nonterm_map.contains_key(string) {
-                        nonterm_map.insert(string.clone(), cur_nonterm_id);
-                        cur_nonterm_id += 1;
-                    }
-                    symvec.push(Symbol::N(Nonterm(*nonterm_map.get(string).unwrap())));
-                }
-                Token::Term => {
-                    if !term_map.contains_key(string) {
-                        term_map.insert(string.clone(), cur_term_id);
-                        cur_term_id += 1;
-                    }
-                    symvec.push(Symbol::T(Term(*term_map.get(string).unwrap())));
-                }
-                _ => (),
-            }
-        }
-        prodvec.push(Production {
-            nonterm: Nonterm(*nonterm_map.get(nonterm).unwrap()),
-            symbols: symvec,
-        });
-        // extra rules time
-        for extra_symbols in extrarule.0.iter() {
-            let mut symvec = Vec::new();
-            for crate::internal_parser::Symbol(term) in extra_symbols.0.iter() {
+        if let internal_parser::Derivation::B(symlist) = derivation {
+            for crate::internal_parser::Symbol(term) in symlist.0.iter() {
                 let (token, attr, _) = term;
                 let Attr::AttrString(string) = attr else {
                     panic!();
@@ -104,8 +75,51 @@ fn all_productions_in_ast(
             }
             prodvec.push(Production {
                 nonterm: Nonterm(*nonterm_map.get(nonterm).unwrap()),
-                symbols: symvec,
+                derivation: Derivation::Symbols(symvec),
             });
+        } else {
+            prodvec.push(Production {
+                nonterm: Nonterm(*nonterm_map.get(nonterm).unwrap()),
+                derivation: Derivation::Null,
+            });
+        }
+        // extra rules time
+        for extra_derivation in extrarule.0.iter() {
+            let mut symvec = Vec::new();
+            if let internal_parser::Derivation::B(symlist) = extra_derivation {
+                for crate::internal_parser::Symbol(term) in symlist.0.iter() {
+                    let (token, attr, _) = term;
+                    let Attr::AttrString(string) = attr else {
+                        panic!();
+                    };
+                    match token {
+                        Token::Nonterm => {
+                            if !nonterm_map.contains_key(string) {
+                                nonterm_map.insert(string.clone(), cur_nonterm_id);
+                                cur_nonterm_id += 1;
+                            }
+                            symvec.push(Symbol::N(Nonterm(*nonterm_map.get(string).unwrap())));
+                        }
+                        Token::Term => {
+                            if !term_map.contains_key(string) {
+                                term_map.insert(string.clone(), cur_term_id);
+                                cur_term_id += 1;
+                            }
+                            symvec.push(Symbol::T(Term(*term_map.get(string).unwrap())));
+                        }
+                        _ => (),
+                    }
+                }
+                prodvec.push(Production {
+                    nonterm: Nonterm(*nonterm_map.get(nonterm).unwrap()),
+                    derivation: Derivation::Symbols(symvec),
+                });
+            } else {
+                prodvec.push(Production {
+                    nonterm: Nonterm(*nonterm_map.get(nonterm).unwrap()),
+                    derivation: Derivation::Null,
+                });
+            }
         }
     }
     prodvec
@@ -159,7 +173,7 @@ fn all_stored_terms_in_ast(store: &Store, term_map: &HashMap<String, i32>) -> Ha
 
 pub struct Production {
     pub nonterm: Nonterm,
-    pub symbols: Vec<Symbol>,
+    pub derivation: Derivation,
 }
 
 pub struct ParserData {
@@ -167,6 +181,11 @@ pub struct ParserData {
     pub nonterms: HashSet<Nonterm>,
     pub terms: HashSet<Term>,
     pub terms_to_store: HashSet<Term>,
+}
+
+pub enum Derivation {
+    Null,
+    Symbols(Vec<Symbol>),
 }
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Term(i32);

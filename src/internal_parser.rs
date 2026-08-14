@@ -60,11 +60,11 @@ impl ParsingEngine {
         self.next_tok();
         // let gotta_be_produces = self.cur_tok.clone();
         self.next_tok();
-        let symlist = self.sym_list()?;
+        let derivation = self.derivation()?;
         // let gotta_be_semicolon = self.cur_tok.clone();
         self.next_tok();
         let extrarule = self.extra_rule()?;
-        Ok(Rule(gotta_be_nonterm, symlist, extrarule))
+        Ok(Rule(gotta_be_nonterm, derivation, extrarule))
     }
     fn sym_list(&mut self) -> Result<SymList, &'static str> {
         // error checking later with generated parser
@@ -77,6 +77,16 @@ impl ParsingEngine {
             symvec.push(self.symbol()?);
         }
         Ok(SymList(symvec))
+    }
+    fn derivation(&mut self) -> Result<Derivation, &'static str> {
+        match self.cur_tok.0 {
+            Token::NullVal => {
+                let ans = Derivation::A(self.cur_tok.clone());
+                self.next_tok();
+                Ok(ans)
+            }
+            _ => Ok(Derivation::B(self.sym_list()?)),
+        }
     }
     fn symbol(&mut self) -> Result<Symbol, &'static str> {
         let gotta_be_nonterm_or_term = self.cur_tok.clone();
@@ -104,10 +114,10 @@ impl ParsingEngine {
         while let Token::Bar = self.cur_tok.0 {
             // let gotta_be_bar = self.cur_tok.clone();
             self.next_tok();
-            let symlist = self.sym_list()?;
+            let derivation = self.derivation()?;
             // let gotta_be_semicolon = self.cur_tok.clone();
             self.next_tok();
-            extrarulevec.push(symlist);
+            extrarulevec.push(derivation);
         }
         Ok(ExtraRule(extrarulevec))
     }
@@ -122,7 +132,12 @@ pub struct Store(pub Vec<Term>);
 // pub struct Rules(Option<(Rule, Box<Rules>)>);
 pub struct Rules(pub Vec<Rule>);
 
-pub struct Rule(pub Term, pub SymList, pub ExtraRule);
+pub struct Rule(pub Term, pub Derivation, pub ExtraRule);
+
+pub enum Derivation {
+    A(Term),
+    B(SymList),
+}
 
 // pub struct SymList(Option<(Symbol, Box<SymList>)>);
 pub struct SymList(pub Vec<Symbol>);
@@ -130,6 +145,6 @@ pub struct SymList(pub Vec<Symbol>);
 pub struct Symbol(pub Term);
 
 // pub struct ExtraRule(Option<(Term, SymList, Term, Box<ExtraRule>)>);
-pub struct ExtraRule(pub Vec<SymList>);
+pub struct ExtraRule(pub Vec<Derivation>);
 
 type Term = (Token, Attr, (usize, usize));
