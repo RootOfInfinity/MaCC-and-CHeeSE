@@ -171,6 +171,7 @@ fn all_stored_terms_in_ast(store: &Store, term_map: &HashMap<String, i32>) -> Ha
 //     term_set
 // }
 
+#[derive(Clone)]
 pub struct Production {
     pub nonterm: Nonterm,
     pub derivation: Derivation,
@@ -182,7 +183,7 @@ pub struct ParserData {
     pub terms: HashSet<Term>,
     pub terms_to_store: HashSet<Term>,
 }
-
+#[derive(Clone)]
 pub enum Derivation {
     Null,
     Symbols(Vec<Symbol>),

@@ -2,8 +2,20 @@ use std::collections::HashMap;
 
 use crate::data_gleaning::{Derivation, Nonterm, Production, Symbol, Term};
 
+/// Test this func to make sure it works
 fn refine_prods_into_hashmap(prods: &Vec<Production>) -> HashMap<Nonterm, Vec<Derivation>> {
-    todo!()
+    let mut refined_map: HashMap<Nonterm, Vec<Derivation>> = HashMap::new();
+    for prod in prods {
+        match refined_map.get_mut(&prod.nonterm) {
+            Some(deriv_vec) => {
+                deriv_vec.push(prod.derivation.clone());
+            }
+            None => {
+                refined_map.insert(prod.nonterm, vec![prod.derivation.clone()]);
+            }
+        }
+    }
+    refined_map
 }
 
 /// Algorithm from 'The Red Dragon Book', is true if the empty string is also part of it.
