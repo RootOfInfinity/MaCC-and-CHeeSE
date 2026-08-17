@@ -10,6 +10,14 @@ pub fn data_from_parse(ast: &Start) -> ParserData {
     let mut term_map = HashMap::new();
     let mut nonterm_map = HashMap::new();
 
+    nonterm_map.insert(String::from("S"), 0);
+    term_map.insert(String::from("$"), 0);
+
+    // 0 is the nonterm id for 'S' or 'Start'
+    //     They need to have an S nonterm, so it is garunteed to appear
+    // 0 is the term id for '$' or the end character
+    //     They cannot name terms $, so it is garunteed to not be taken
+
     let prods = all_productions_in_ast(rules, &mut term_map, &mut nonterm_map);
     let terms_to_store = all_stored_terms_in_ast(store, &term_map);
 
