@@ -197,9 +197,9 @@ pub enum Derivation {
     Symbols(Vec<Symbol>),
 }
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Copy)]
-pub struct Term(i32);
+pub struct Term(pub i32);
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Copy)]
-pub struct Nonterm(i32);
+pub struct Nonterm(pub i32);
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Copy)]
 pub enum Symbol {
     T(Term),
