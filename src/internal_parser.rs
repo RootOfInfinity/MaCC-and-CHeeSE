@@ -81,9 +81,8 @@ impl ParsingEngine {
     fn derivation(&mut self) -> Result<Derivation, &'static str> {
         match self.cur_tok.0 {
             Token::NullVal => {
-                let ans = Derivation::A(self.cur_tok.clone());
                 self.next_tok();
-                Ok(ans)
+                Ok(Derivation::A)
             }
             _ => Ok(Derivation::B(self.sym_list()?)),
         }
@@ -135,7 +134,7 @@ pub struct Rules(pub Vec<Rule>);
 pub struct Rule(pub Term, pub Derivation, pub ExtraRule);
 
 pub enum Derivation {
-    A(Term),
+    A,
     B(SymList),
 }
 
