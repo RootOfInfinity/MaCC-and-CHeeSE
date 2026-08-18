@@ -5,6 +5,33 @@ const END_ID: i32 = 0;
 
 use crate::data_gleaning::{Derivation, Nonterm, Production, Symbol, Term};
 
+/// Algorithm from 'The Red Dragon Book', modified for my needs.
+/// Does not check if actually LL(1), waiting until first integration test for hard work
+pub fn create_ll1_parsing_table(prods: &Vec<Production>) -> HashMap<(Nonterm, Term), Production> {
+    let mut table_map: HashMap<(Nonterm, Term), Production> = HashMap::new();
+    let cool_prods = refine_prods_into_hashmap(prods);
+    let follow_map = follow_all(prods, &cool_prods);
+    for prod in prods {
+        let (first_set, empty_string) = match prod.derivation {
+            Derivation::Null => (HashSet::new(), true),
+            Derivation::Symbols(ref sym_vec) => first(sym_vec, &cool_prods),
+        };
+        for term in first_set {
+            table_map.insert((prod.nonterm, term), prod.clone());
+        }
+        if empty_string {
+            let empty_hashset = HashSet::new();
+            let cur_follow = follow_map
+                .get(&prod.nonterm)
+                .unwrap_or_else(|| &empty_hashset);
+            for term in cur_follow {
+                table_map.insert((prod.nonterm, *term), prod.clone());
+            }
+        }
+    }
+    table_map
+}
+
 /// Test this func to make sure it works
 fn refine_prods_into_hashmap(prods: &Vec<Production>) -> HashMap<Nonterm, Vec<Derivation>> {
     let mut refined_map: HashMap<Nonterm, Vec<Derivation>> = HashMap::new();
