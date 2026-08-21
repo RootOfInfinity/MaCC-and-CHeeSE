@@ -11,6 +11,7 @@ impl ParsingEngine {
         let cur_tok = lex_engine
             .next_tok()
             .ok_or("No tokens left in lex engine")?;
+        println!("CUR TOK: {:?}", cur_tok);
         Ok(ParsingEngine {
             cur_tok,
             lex_engine,
@@ -22,6 +23,7 @@ impl ParsingEngine {
             .next_tok()
             .ok_or("No tokens left in lex engine")?;
         self.cur_tok = next_tok;
+        println!("CUR TOK: {:?}", self.cur_tok);
         Ok(())
     }
     pub fn start(&mut self) -> Result<Start, &'static str> {
@@ -29,8 +31,15 @@ impl ParsingEngine {
     }
     fn store(&mut self) -> Result<Store, &'static str> {
         // assume first term is 'Store'
+        let Token::Store = self.cur_tok.0 else {
+            println!("{:?}", self.cur_tok);
+            return Err("Expected token: store");
+        };
         self.next_tok();
         // assume second term is 'LeftArrow'
+        let Token::LeftArrow = self.cur_tok.0 else {
+            return Err("Expected token: left_arrow");
+        };
         self.next_tok();
         let mut termvec = Vec::new();
         while let Token::Term = self.cur_tok.0 {
@@ -39,6 +48,9 @@ impl ParsingEngine {
             termvec.push(gotta_be_term);
         }
         // assume last term is 'RightArrow'
+        let Token::RightArrow = self.cur_tok.0 else {
+            return Err("Expected token: right_arrow");
+        };
         self.next_tok();
         Ok(Store(termvec))
     }
@@ -55,13 +67,21 @@ impl ParsingEngine {
         Ok(Rules(rulevec))
     }
     fn rule(&mut self) -> Result<Rule, &'static str> {
-        // no error checking, this parser will be generated later anyways
+        let Token::Nonterm = self.cur_tok.0 else {
+            return Err("Expected token: nonterm");
+        };
         let gotta_be_nonterm = self.cur_tok.clone();
         self.next_tok();
         // let gotta_be_produces = self.cur_tok.clone();
+        let Token::Produces = self.cur_tok.0 else {
+            return Err("Expected token: produces");
+        };
         self.next_tok();
         let derivation = self.derivation()?;
         // let gotta_be_semicolon = self.cur_tok.clone();
+        let Token::Semicolon = self.cur_tok.0 else {
+            return Err("Expected token: semicolon");
+        };
         self.next_tok();
         let extrarule = self.extra_rule()?;
         Ok(Rule(gotta_be_nonterm, derivation, extrarule))
@@ -88,6 +108,12 @@ impl ParsingEngine {
         }
     }
     fn symbol(&mut self) -> Result<Symbol, &'static str> {
+        match self.cur_tok.0 {
+            Token::Nonterm | Token::Term => (),
+            _ => {
+                return Err("Expected token: term OR nonterm");
+            }
+        }
         let gotta_be_nonterm_or_term = self.cur_tok.clone();
         self.next_tok();
         Ok(Symbol(gotta_be_nonterm_or_term))
@@ -112,9 +138,16 @@ impl ParsingEngine {
         let mut extrarulevec = Vec::new();
         while let Token::Bar = self.cur_tok.0 {
             // let gotta_be_bar = self.cur_tok.clone();
+
+            let Token::Bar = self.cur_tok.0 else {
+                return Err("Expected token: bar");
+            };
             self.next_tok();
             let derivation = self.derivation()?;
             // let gotta_be_semicolon = self.cur_tok.clone();
+            let Token::Semicolon = self.cur_tok.0 else {
+                return Err("Expected token: semicolon");
+            };
             self.next_tok();
             extrarulevec.push(derivation);
         }
@@ -124,26 +157,34 @@ impl ParsingEngine {
 
 // need a func and an enum/struct for all nonterms
 
+#[derive(Debug)]
 pub struct Start(pub Store, pub Rules);
 
+#[derive(Debug)]
 pub struct Store(pub Vec<Term>);
 
 // pub struct Rules(Option<(Rule, Box<Rules>)>);
+#[derive(Debug)]
 pub struct Rules(pub Vec<Rule>);
 
+#[derive(Debug)]
 pub struct Rule(pub Term, pub Derivation, pub ExtraRule);
 
+#[derive(Debug)]
 pub enum Derivation {
     A,
     B(SymList),
 }
 
 // pub struct SymList(Option<(Symbol, Box<SymList>)>);
+#[derive(Debug)]
 pub struct SymList(pub Vec<Symbol>);
 
+#[derive(Debug)]
 pub struct Symbol(pub Term);
 
 // pub struct ExtraRule(Option<(Term, SymList, Term, Box<ExtraRule>)>);
+#[derive(Debug)]
 pub struct ExtraRule(pub Vec<Derivation>);
 
 type Term = (Token, Attr, (usize, usize));

@@ -21,20 +21,20 @@ pub fn data_from_parse(ast: &Start) -> ParserData {
     let prods = all_productions_in_ast(rules, &mut term_map, &mut nonterm_map);
     let terms_to_store = all_stored_terms_in_ast(store, &term_map);
 
-    let mut terms = HashSet::new();
-    for term_num in term_map.values() {
-        terms.insert(Term(*term_num));
+    let mut reverse_term_map = HashMap::new();
+    for (term_string, term_num) in term_map {
+        reverse_term_map.insert(Term(term_num), term_string);
     }
-    let mut nonterms = HashSet::new();
-    for nonterm_num in nonterm_map.values() {
-        nonterms.insert(Nonterm(*nonterm_num));
+    let mut reverse_nonterm_map = HashMap::new();
+    for (nonterm_string, nonterm_num) in nonterm_map {
+        reverse_nonterm_map.insert(Nonterm(nonterm_num), nonterm_string);
     }
 
     ParserData {
         productions: prods,
-        nonterms,
-        terms,
         terms_to_store,
+        reverse_term_map,
+        reverse_nonterm_map,
     }
 }
 
@@ -44,8 +44,8 @@ fn all_productions_in_ast(
     nonterm_map: &mut HashMap<String, i32>,
 ) -> Vec<Production> {
     let mut prodvec = Vec::new();
-    let mut cur_term_id = 0;
-    let mut cur_nonterm_id = 0;
+    let mut cur_term_id = 1;
+    let mut cur_nonterm_id = 1;
     for Rule(term, derivation, extrarule) in rules.0.iter() {
         let (Token::Nonterm, Attr::AttrString(nonterm), _) = term else {
             // can only get here with programmer error once error
@@ -179,19 +179,22 @@ fn all_stored_terms_in_ast(store: &Store, term_map: &HashMap<String, i32>) -> Ha
 //     term_set
 // }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Production {
     pub nonterm: Nonterm,
     pub derivation: Derivation,
 }
 
+#[derive(Clone)]
 pub struct ParserData {
     pub productions: Vec<Production>,
-    pub nonterms: HashSet<Nonterm>,
-    pub terms: HashSet<Term>,
+    // pub nonterms: HashSet<Nonterm>,
+    // pub terms: HashSet<Term>,
     pub terms_to_store: HashSet<Term>,
+    pub reverse_term_map: HashMap<Term, String>,
+    pub reverse_nonterm_map: HashMap<Nonterm, String>,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Derivation {
     Null,
     Symbols(Vec<Symbol>),

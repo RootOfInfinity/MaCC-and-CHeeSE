@@ -67,7 +67,10 @@ impl LexEngine {
             temp_str.push(self.cur_char());
             let start_loc = self.cur_loc;
             self.next_char();
-            while Self::is_upper_letter(self.cur_char()) || self.cur_char() == '_' {
+            while Self::is_upper_letter(self.cur_char())
+                || Self::is_lower_letter(self.cur_char())
+                || self.cur_char() == '_'
+            {
                 temp_str.push(self.cur_char());
                 self.next_char();
                 // add error checking if reach end of file
@@ -80,18 +83,23 @@ impl LexEngine {
         }
         // now the small amount of symbols
         if self.cur_char() == ';' {
+            self.next_char();
             return Some((Token::Semicolon, Attr::Skip, self.cur_loc));
         }
         if self.cur_char() == '|' {
+            self.next_char();
             return Some((Token::Bar, Attr::Skip, self.cur_loc));
         }
-        if self.cur_char() == '$' {
-            return Some((Token::EndOfInput, Attr::Skip, self.cur_loc));
-        }
+        // if self.cur_char() == '$' {
+        //     self.next_char();
+        //     return Some((Token::EndOfInput, Attr::Skip, self.cur_loc));
+        // }
         if self.cur_char() == '<' {
+            self.next_char();
             return Some((Token::LeftArrow, Attr::Skip, self.cur_loc));
         }
         if self.cur_char() == '>' {
+            self.next_char();
             return Some((Token::RightArrow, Attr::Skip, self.cur_loc));
         }
         // finally the 'produces' symbol
@@ -102,6 +110,7 @@ impl LexEngine {
             if self.cur_char() == ':' {
                 self.next_char();
                 if self.cur_char() == '=' {
+                    self.next_char();
                     return Some((Token::Produces, Attr::Skip, start_loc));
                 } else {
                     panic!();
@@ -121,7 +130,7 @@ impl LexEngine {
         c >= 'A' && c <= 'Z'
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Token {
     Nonterm,
     Term,
@@ -129,13 +138,13 @@ pub enum Token {
     Produces,
     Bar,
     NullVal,
-    EndOfInput,
+    // EndOfInput,
     Store,
     LeftArrow,
     RightArrow,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Attr {
     Skip,
     AttrString(String),
